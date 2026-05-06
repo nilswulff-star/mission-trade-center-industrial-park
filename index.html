@@ -321,10 +321,39 @@ p { margin: 0 0 18px; }
   position: relative;
   overflow: hidden;
 }
+/* Background video — fills the hero, sits at the bottom of the stacking context. */
+.hero__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  /* Slight darken so even the brightest video frames keep text legible. */
+  filter: brightness(0.55) saturate(0.92);
+  pointer-events: none;
+}
+/* Dark gradient overlay between the video and the text — adds depth and    */
+/* guarantees contrast for white type regardless of video content.          */
+.hero__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(180deg, rgba(14,17,22,0.55) 0%, rgba(14,17,22,0.78) 100%),
+    linear-gradient(90deg, rgba(14,17,22,0.55) 0%, rgba(14,17,22,0.15) 60%, rgba(14,17,22,0.45) 100%);
+  pointer-events: none;
+}
+/* Reduced-motion users get the poster image only, no animation. */
+@media (prefers-reduced-motion: reduce) {
+  .hero__video { display: none; }
+  .hero { background-image: var(--hero-poster, none); background-size: cover; background-position: center; }
+}
 .hero::before {
-  /* atmospheric texture */
+  /* atmospheric accent — sits above the video/overlay, below the content */
   content: '';
   position: absolute; inset: 0;
+  z-index: 0;
   background:
     radial-gradient(circle at 80% 20%, rgba(255,107,0,0.12) 0%, transparent 50%),
     radial-gradient(circle at 10% 90%, rgba(255,107,0,0.06) 0%, transparent 40%);
@@ -551,108 +580,80 @@ p { margin: 0 0 18px; }
    MASTER PLAN
    ================================================================ */
 .master-plan {
-  background: var(--c-paper-2);
+  background: #fff;
   position: relative;
   margin: 32px 0 24px;
-  padding: 32px;
+  padding: 24px;
   border: 1px solid var(--c-rule);
 }
-@media (max-width: 720px) { .master-plan { padding: 16px; } }
+@media (max-width: 720px) { .master-plan { padding: 12px; } }
 
-.mp-svg {
+/* The wrapper holds the M2 engineer's exhibit (raster) and an SVG overlay
+   that defines invisible polygon hit-areas for each lot. They're stacked
+   in the same coordinate space so polygons land on the right lots at any
+   container width. */
+.mp-image-wrap {
+  position: relative;
+  width: 100%;
+  line-height: 0; /* kill any inline-block whitespace under the image */
+}
+.mp-image {
+  display: block;
   width: 100%;
   height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.mp-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   display: block;
-  background: #fff;
-  border: 1px solid var(--c-rule);
+  /* Let pointer events pass through the SVG itself so the cursor isn't
+     "captured" over empty areas, but the polygons inside still receive
+     clicks via pointer-events: auto on .mp-lot-area / .mp-meda-area. */
+  pointer-events: none;
 }
-.mp-lot {
-  cursor: pointer;
-  transition: filter var(--t-fast) var(--easing);
-}
-.mp-lot rect {
+
+/* Inventory lot hit-areas: invisible by default, orange tint on hover. */
+.mp-lot-area {
   fill: var(--c-orange);
-  fill-opacity: 0.78;
-  stroke: #fff;
-  stroke-width: 1.4;
-  transition: fill-opacity var(--t-fast) var(--easing), filter var(--t-fast) var(--easing);
-}
-.mp-lot:hover rect,
-.mp-lot:focus rect,
-.mp-lot.is-selected rect {
-  fill-opacity: 1;
-  stroke: var(--c-ink);
+  fill-opacity: 0;
+  stroke: transparent;
   stroke-width: 2;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: fill-opacity var(--t-fast) var(--easing), stroke var(--t-fast) var(--easing);
 }
-.mp-lot.is-selected rect {
-  filter: drop-shadow(0 0 0 var(--c-ink));
+.mp-lot-area:hover,
+.mp-lot-area:focus,
+.mp-lot-area.is-selected {
+  fill-opacity: 0.45;
+  stroke: var(--c-ink);
+  outline: none;
 }
-.mp-lot text {
-  fill: #fff;
-  font-family: var(--f-sans);
-  font-size: 11px;
-  font-weight: 700;
-  text-anchor: middle;
-  pointer-events: none;
-}
-.mp-meda rect {
-  fill: #C7C2B6;
-  fill-opacity: 0.85;
-  stroke: #8E887A;
-  stroke-width: 1;
-  stroke-dasharray: 4 3;
-}
-.mp-meda text {
-  fill: #3A3A3A;
-  font-family: var(--f-sans);
-  font-size: 10px;
-  font-weight: 600;
-  text-anchor: middle;
-  pointer-events: none;
-}
-.mp-meda-label {
-  fill: #5A5A5A;
-  font-size: 8.5px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-}
-.mp-detention rect {
-  fill: #B8D4E3;
+.mp-lot-area.is-selected {
   fill-opacity: 0.55;
-  stroke: #6E92A6;
-  stroke-width: 0.8;
-  stroke-dasharray: 2 2;
 }
-.mp-detention text {
-  fill: #3A4A55;
-  font-family: var(--f-sans);
-  font-size: 8px;
-  font-weight: 500;
-  text-anchor: middle;
+
+/* MEDA parcel hit-areas: muted slate-blue tint on hover (signals they're
+   informational only, not buyable). */
+.mp-meda-area {
+  fill: #6E8294;
+  fill-opacity: 0;
+  stroke: transparent;
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  cursor: help;
+  pointer-events: auto;
+  transition: fill-opacity var(--t-fast) var(--easing), stroke var(--t-fast) var(--easing);
 }
-.mp-road {
-  stroke: #FF6B00;
-  stroke-width: 4;
-  fill: none;
-  opacity: 0.85;
-}
-.mp-road-label {
-  fill: #fff;
-  font-family: var(--f-sans);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.mp-road-bg {
-  fill: var(--c-ink);
-}
-.mp-cluster-label {
-  fill: var(--c-ink);
-  font-family: var(--f-display);
-  font-size: 14px;
-  font-style: italic;
-  font-weight: 500;
+.mp-meda-area:hover,
+.mp-meda-area:focus {
+  fill-opacity: 0.35;
+  stroke: #4A5C6E;
+  outline: none;
 }
 .mp-tooltip {
   position: absolute;
@@ -728,8 +729,8 @@ p { margin: 0 0 18px; }
   width: 22px; height: 14px;
   border: 1px solid var(--c-rule);
 }
-.mp-legend__swatch--avail { background: var(--c-orange); }
-.mp-legend__swatch--meda { background: #C7C2B6; border-style: dashed; border-color: #8E887A; }
+.mp-legend__swatch--avail { background: rgba(255, 107, 0, 0.45); border-color: var(--c-ink); }
+.mp-legend__swatch--meda { background: rgba(110, 130, 148, 0.35); border-style: dashed; border-color: #4A5C6E; }
 .mp-legend__swatch--det { background: #B8D4E3; border-color: #6E92A6; }
 
 /* ================================================================
@@ -1873,6 +1874,156 @@ p { margin: 0 0 18px; }
 }
 
 /* ============================================================
+   GALLERY
+   Hero feature shot + responsive grid + drone video block.
+   Placeholder treatment makes missing images obvious without
+   breaking layout — once a real image lands at the src path,
+   the placeholder label hides automatically.
+   ============================================================ */
+.gallery-hero {
+  margin: 0 0 48px;
+}
+.gallery-hero__media {
+  position: relative;
+  aspect-ratio: 16 / 7;
+  overflow: hidden;
+  border: 1px solid var(--c-rule);
+}
+.gallery-hero__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.gallery-hero figcaption {
+  font-family: var(--f-sans);
+  font-size: 13px;
+  color: var(--c-text-mute);
+  margin-top: 12px;
+  line-height: 1.5;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 32px;
+  margin-bottom: 64px;
+}
+.gallery-item {
+  margin: 0;
+}
+.gallery-item__media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 1px solid var(--c-rule);
+}
+.gallery-item__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 600ms var(--easing);
+}
+.gallery-item:hover .gallery-item__media img {
+  transform: scale(1.04);
+}
+.gallery-item figcaption {
+  font-family: var(--f-sans);
+  font-size: 13px;
+  color: var(--c-text-mute);
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+/* Placeholder system: when an <img> fails to load (file not yet
+   uploaded), the alt text shows AND a subtle "drop image here" label
+   appears via the .gallery-placeholder span. Once the image loads
+   successfully, JavaScript hides the label. */
+.gallery-placeholder {
+  background: linear-gradient(135deg, #EFEDE6 0%, #E5E1D6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gallery-placeholder img {
+  /* If image fails to load, alt text appears in this color */
+  color: var(--c-text-mute);
+  font-family: var(--f-sans);
+  font-size: 12px;
+  text-align: center;
+  padding: 24px;
+}
+.gallery-placeholder__label {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(14,17,22,0.85);
+  color: var(--c-orange);
+  font-family: var(--f-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 6px 10px;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.gallery-placeholder__label code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #fff;
+  font-size: 10px;
+  background: rgba(255,255,255,0.08);
+  padding: 1px 4px;
+}
+/* When the image is genuinely loaded (has natural width > 0),
+   JS will add .is-loaded which hides the placeholder label. */
+.gallery-placeholder.is-loaded .gallery-placeholder__label { display: none; }
+
+.gallery-video {
+  margin-top: 64px;
+  padding-top: 48px;
+  border-top: 1px solid var(--c-rule);
+}
+.gallery-video__head {
+  margin-bottom: 24px;
+}
+.gallery-video__head h3 {
+  font-family: var(--f-display);
+  font-size: clamp(28px, 3vw, 40px);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  margin: 8px 0 0;
+}
+.gallery-video__media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--c-ink);
+  border: 1px solid var(--c-rule);
+}
+.gallery-video__media video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.gallery-video__caption {
+  font-family: var(--f-sans);
+  font-size: 13px;
+  color: var(--c-text-mute);
+  margin-top: 12px;
+}
+.gallery-cap-meta {
+  color: var(--c-text-mute);
+  font-style: italic;
+}
+
+@media (max-width: 720px) {
+  .gallery-grid { grid-template-columns: 1fr; gap: 24px; }
+  .gallery-hero__media { aspect-ratio: 4 / 3; }
+}
+
+/* ============================================================
    TABS
    Sticky tab strip beneath the nav. Each tab button reveals a
    panel; the rest are hidden via the [hidden] attribute.
@@ -1977,6 +2128,7 @@ p { margin: 0 0 18px; }
       <a href="#summary" data-tab-link="overview">Overview</a>
       <a href="#master-plan" data-tab-link="park">The Park</a>
       <a href="#lot16" data-tab-link="lot16">Lot 16</a>
+      <a href="#gallery" data-tab-link="gallery">Gallery</a>
       <a href="#specs" data-tab-link="property">Property</a>
       <a href="#docs" data-tab-link="resources">Resources</a>
       <a href="#inquire" class="nav__cta" data-tab-link="resources">Contact Broker</a>
@@ -1988,6 +2140,16 @@ p { margin: 0 0 18px; }
      HERO
      ================================================================ -->
 <header class="hero" id="top">
+  <!-- Background video. Autoplay muted loop with poster fallback for     -->
+  <!-- iOS / cellular / reduced-motion. Drop your video file at           -->
+  <!-- /hero-video.mp4 (and optionally /hero-video.webm) and a static     -->
+  <!-- poster at /hero-poster.jpg.                                        -->
+  <video class="hero__video" autoplay muted loop playsinline preload="metadata"
+         poster="hero-poster.jpg" aria-hidden="true">
+    <source src="hero-video.webm" type="video/webm">
+    <source src="hero-video.mp4"  type="video/mp4">
+  </video>
+  <div class="hero__overlay" aria-hidden="true"></div>
   <div class="hero__inner">
     <div class="hero__meta">For Sale · Mission, Texas · Hidalgo County</div>
     <h1 class="hero__title">Mission Trade<br>Center <em>Industrial</em><br>Logistics Park</h1>
@@ -2040,11 +2202,14 @@ p { margin: 0 0 18px; }
     <button type="button" class="tabs__btn" role="tab" aria-selected="false" aria-controls="panel-lot16" id="tab-lot16" data-tab="lot16">
       <span class="tabs__num">03</span><span class="tabs__label">Lot 16 — Cold Storage</span>
     </button>
+    <button type="button" class="tabs__btn" role="tab" aria-selected="false" aria-controls="panel-gallery" id="tab-gallery" data-tab="gallery">
+      <span class="tabs__num">04</span><span class="tabs__label">Gallery</span>
+    </button>
     <button type="button" class="tabs__btn" role="tab" aria-selected="false" aria-controls="panel-property" id="tab-property" data-tab="property">
-      <span class="tabs__num">04</span><span class="tabs__label">Property &amp; Market</span>
+      <span class="tabs__num">05</span><span class="tabs__label">Property &amp; Market</span>
     </button>
     <button type="button" class="tabs__btn" role="tab" aria-selected="false" aria-controls="panel-resources" id="tab-resources" data-tab="resources">
-      <span class="tabs__num">05</span><span class="tabs__label">Resources &amp; Contact</span>
+      <span class="tabs__num">06</span><span class="tabs__label">Resources &amp; Contact</span>
     </button>
   </div>
 </div>
@@ -2160,203 +2325,50 @@ p { margin: 0 0 18px; }
     </div>
 
     <div class="master-plan" id="master-plan-wrap">
-      <!-- Schematic master plan SVG. Coordinates derive from the M2 Engineering layout (04/29/2026); the rendering is diagrammatic, not to-scale survey. -->
-      <svg class="mp-svg" viewBox="0 0 1200 760" role="img" aria-label="Mission Trade Center master plan">
-        <defs>
-          <pattern id="mp-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#EFEDE6" stroke-width="0.6"/>
-          </pattern>
-        </defs>
-        <rect width="1200" height="760" fill="url(#mp-grid)"/>
+      <!-- Master plan: actual M2 Engineering layout exhibit (04/29/2026)   -->
+      <!-- as the background image, with an SVG overlay defining invisible  -->
+      <!-- polygon hit areas for each lot. ViewBox matches the image's      -->
+      <!-- native pixel dimensions (2200x1530) so polygon coordinates map   -->
+      <!-- 1:1 to image pixels. preserveAspectRatio keeps both layers in    -->
+      <!-- lockstep at any container width.                                 -->
+      <div class="mp-image-wrap">
+        <img class="mp-image" src="master-plan.png"
+             alt="Mission Trade Center master plan exhibit prepared by M2 Engineering, PLLC, dated April 29, 2026, showing 16 inventory lots in two clusters and 54.32 acres of MEDA-contracted parcels along the southern boundary"
+             width="2200" height="1530">
+        <svg class="mp-overlay" viewBox="0 0 2200 1530" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Interactive lot overlay">
+          <!-- Inventory lots — invisible by default; orange tint on hover   -->
+          <polygon class="mp-lot-area" data-lot="1" tabindex="0" role="button" aria-label="Lot 1, 3.57 acres" points="1330,910 1500,910 1500,990 1330,990"/>
+          <polygon class="mp-lot-area" data-lot="2" tabindex="0" role="button" aria-label="Lot 2, 3.12 acres" points="870,895 1100,875 1100,950 880,975"/>
+          <polygon class="mp-lot-area" data-lot="3" tabindex="0" role="button" aria-label="Lot 3, 4.64 acres" points="990,790 1235,790 1235,870 870,870"/>
+          <polygon class="mp-lot-area" data-lot="4" tabindex="0" role="button" aria-label="Lot 4, 3.51 acres" points="1075,725 1255,725 1255,790 1015,790"/>
+          <polygon class="mp-lot-area" data-lot="5" tabindex="0" role="button" aria-label="Lot 5, 3.37 acres" points="940,650 1430,610 1430,650 975,720"/>
+          <polygon class="mp-lot-area" data-lot="6" tabindex="0" role="button" aria-label="Lot 6, 3.70 acres" points="1100,560 1330,490 1430,565 1430,605 1100,605"/>
+          <polygon class="mp-lot-area" data-lot="7" tabindex="0" role="button" aria-label="Lot 7, 3.93 acres" points="1340,810 1500,810 1500,895 1340,895"/>
+          <polygon class="mp-lot-area" data-lot="8" tabindex="0" role="button" aria-label="Lot 8, 3.70 acres" points="1235,810 1340,810 1340,895 1235,895"/>
+          <polygon class="mp-lot-area" data-lot="9" tabindex="0" role="button" aria-label="Lot 9, 3.99 acres" points="1275,725 1500,725 1500,805 1275,805"/>
+          <polygon class="mp-lot-area" data-lot="10" tabindex="0" role="button" aria-label="Lot 10, 5.29 acres" points="1565,318 1788,318 1788,405 1565,405"/>
+          <polygon class="mp-lot-area" data-lot="11" tabindex="0" role="button" aria-label="Lot 11, 5.14 acres" points="1565,213 1788,213 1788,318 1565,318"/>
+          <polygon class="mp-lot-area" data-lot="12" tabindex="0" role="button" aria-label="Lot 12, 5.12 acres" points="1565,108 1788,108 1788,213 1565,213"/>
+          <polygon class="mp-lot-area" data-lot="13" tabindex="0" role="button" aria-label="Lot 13, 5.12 acres" points="1788,108 2028,108 2028,213 1788,213"/>
+          <polygon class="mp-lot-area" data-lot="14" tabindex="0" role="button" aria-label="Lot 14, 5.14 acres" points="1788,213 2028,213 2028,318 1788,318"/>
+          <polygon class="mp-lot-area" data-lot="15" tabindex="0" role="button" aria-label="Lot 15, 5.13 acres" points="1788,318 2028,318 2028,405 1788,405"/>
+          <polygon class="mp-lot-area" data-lot="16" tabindex="0" role="button" aria-label="Lot 16, 8.39 acres - cold storage anchor" points="2028,108 2128,108 2128,355 2028,355"/>
 
-        <!-- Compass -->
-        <g transform="translate(1130, 50)">
-          <circle r="22" fill="#fff" stroke="#0E1116" stroke-width="1"/>
-          <text y="-8" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#0E1116">N</text>
-          <path d="M 0 -4 L -4 6 L 0 2 L 4 6 Z" fill="#FF6B00"/>
-        </g>
-
-        <!-- Conway Avenue (east edge) -->
-        <line class="mp-road" x1="980" y1="40" x2="980" y2="720"/>
-        <rect class="mp-road-bg" x="990" y="280" width="156" height="32"/>
-        <text class="mp-road-label" x="1068" y="301" text-anchor="middle">S. CONWAY AVE</text>
-
-        <!-- Military Parkway / Highway (south) -->
-        <line class="mp-road" x1="40" y1="710" x2="980" y2="710"/>
-        <rect class="mp-road-bg" x="320" y="720" width="220" height="32"/>
-        <text class="mp-road-label" x="430" y="741" text-anchor="middle">MILITARY PKWY</text>
-
-        <!-- Los Ebanos (west) -->
-        <line class="mp-road" x1="40" y1="40" x2="40" y2="710"/>
-        <rect class="mp-road-bg" x="50" y="120" width="156" height="32"/>
-        <text class="mp-road-label" x="128" y="141" text-anchor="middle">LOS EBANOS RD</text>
-
-        <!-- I-2 indicator (top) -->
-        <line x1="40" y1="20" x2="1140" y2="20" stroke="#0E1116" stroke-width="2" stroke-dasharray="6 4"/>
-        <text x="1100" y="14" text-anchor="end" font-family="Inter" font-size="10" font-weight="600" fill="#0E1116" letter-spacing="0.1em">I-2 / US-83 →</text>
-
-        <!-- ============================================================ -->
-        <!-- CLUSTER A — Northeast Industrial Block (Lots 10-16)            -->
-        <!-- Layout: 3 rows × Conway frontage, with Lot 16 wrapping east   -->
-        <!-- ============================================================ -->
-        <text class="mp-cluster-label" x="540" y="100">Cluster A · Northeast Industrial Block · 39.33 ac contiguous</text>
-        <line x1="540" y1="108" x2="900" y2="108" stroke="#FF6B00" stroke-width="1"/>
-
-        <!-- Row 1: Lots 12, 13 -->
-        <g class="mp-lot" data-lot="12" tabindex="0" role="button" aria-label="Lot 12, 5.12 acres">
-          <rect x="540" y="120" width="170" height="100"/>
-          <text x="625" y="158" font-size="20">12</text>
-          <text x="625" y="178" font-size="10" font-weight="500">5.12 AC</text>
-        </g>
-        <g class="mp-lot" data-lot="13" tabindex="0" role="button" aria-label="Lot 13, 5.12 acres">
-          <rect x="710" y="120" width="170" height="100"/>
-          <text x="795" y="158" font-size="20">13</text>
-          <text x="795" y="178" font-size="10" font-weight="500">5.12 AC</text>
-        </g>
-
-        <!-- Row 2: Lots 11, 14, 16 -->
-        <g class="mp-lot" data-lot="11" tabindex="0" role="button" aria-label="Lot 11, 5.14 acres">
-          <rect x="540" y="220" width="170" height="100"/>
-          <text x="625" y="258" font-size="20">11</text>
-          <text x="625" y="278" font-size="10" font-weight="500">5.14 AC</text>
-        </g>
-        <g class="mp-lot" data-lot="14" tabindex="0" role="button" aria-label="Lot 14, 5.14 acres">
-          <rect x="710" y="220" width="170" height="100"/>
-          <text x="795" y="258" font-size="20">14</text>
-          <text x="795" y="278" font-size="10" font-weight="500">5.14 AC</text>
-        </g>
-        <!-- Lot 16 — wraps east edge, Conway frontage; tallest profile -->
-        <g class="mp-lot" data-lot="16" tabindex="0" role="button" aria-label="Lot 16, 8.39 acres - cold storage anchor">
-          <rect x="880" y="220" width="100" height="200"/>
-          <text x="930" y="306" font-size="22">16</text>
-          <text x="930" y="326" font-size="10" font-weight="600">8.39 AC</text>
-          <text x="930" y="342" font-size="8" font-weight="600" fill="#fff" letter-spacing="0.05em">COLD STORAGE</text>
-        </g>
-
-        <!-- Row 3: Lots 10, 15 -->
-        <g class="mp-lot" data-lot="10" tabindex="0" role="button" aria-label="Lot 10, 5.29 acres">
-          <rect x="540" y="320" width="170" height="100"/>
-          <text x="625" y="358" font-size="20">10</text>
-          <text x="625" y="378" font-size="10" font-weight="500">5.29 AC</text>
-        </g>
-        <g class="mp-lot" data-lot="15" tabindex="0" role="button" aria-label="Lot 15, 5.13 acres">
-          <rect x="710" y="320" width="170" height="100"/>
-          <text x="795" y="358" font-size="20">15</text>
-          <text x="795" y="378" font-size="10" font-weight="500">5.13 AC</text>
-        </g>
-
-        <!-- Cluster A detention -->
-        <g class="mp-detention">
-          <rect x="540" y="420" width="340" height="32"/>
-          <text x="710" y="441" font-size="10">SHARED DETENTION · 2.40 AC</text>
-        </g>
-
-        <!-- ============================================================ -->
-        <!-- CLUSTER B — Central Cul-de-Sac (Lots 1-9)                     -->
-        <!-- Layout: cul-de-sac off Los Ebanos with lots arranged around   -->
-        <!-- ============================================================ -->
-        <text class="mp-cluster-label" x="80" y="100">Cluster B · Central Cul-de-Sac · 33.53 ac · 9 lots</text>
-        <line x1="80" y1="108" x2="500" y2="108" stroke="#FF6B00" stroke-width="1"/>
-
-        <!-- Internal road from Los Ebanos -->
-        <path d="M 60 250 L 230 250 Q 240 250 240 260 L 240 320 Q 260 360 300 360 Q 340 360 360 320 L 360 260 Q 360 250 370 250 L 510 250" fill="none" stroke="#999" stroke-width="6"/>
-        <path d="M 60 250 L 230 250 Q 240 250 240 260 L 240 320 Q 260 360 300 360 Q 340 360 360 320 L 360 260 Q 360 250 370 250 L 510 250" fill="none" stroke="#fff" stroke-width="1" stroke-dasharray="4 4"/>
-
-        <!-- Top row: 1, 2, 3 -->
-        <g class="mp-lot" data-lot="1" tabindex="0" role="button" aria-label="Lot 1, 3.57 acres">
-          <rect x="80" y="160" width="120" height="80"/>
-          <text x="140" y="195" font-size="18">1</text>
-          <text x="140" y="213" font-size="10" font-weight="500">3.57 AC</text>
-        </g>
-        <g class="mp-lot" data-lot="2" tabindex="0" role="button" aria-label="Lot 2, 3.12 acres">
-          <rect x="200" y="160" width="100" height="80"/>
-          <text x="250" y="195" font-size="18">2</text>
-          <text x="250" y="213" font-size="10" font-weight="500">3.12 AC</text>
-        </g>
-        <g class="mp-lot" data-lot="3" tabindex="0" role="button" aria-label="Lot 3, 4.64 acres">
-          <rect x="300" y="160" width="140" height="80"/>
-          <text x="370" y="195" font-size="18">3</text>
-          <text x="370" y="213" font-size="10" font-weight="500">4.64 AC</text>
-        </g>
-
-        <!-- Middle row left: 4, 5 -->
-        <g class="mp-lot" data-lot="4" tabindex="0" role="button" aria-label="Lot 4, 3.51 acres">
-          <rect x="80" y="260" width="115" height="100"/>
-          <text x="137.5" y="305" font-size="18">4</text>
-          <text x="137.5" y="323" font-size="10" font-weight="500">3.51 AC</text>
-        </g>
-        <g class="mp-lot" data-lot="5" tabindex="0" role="button" aria-label="Lot 5, 3.37 acres">
-          <rect x="80" y="360" width="115" height="80"/>
-          <text x="137.5" y="395" font-size="18">5</text>
-          <text x="137.5" y="413" font-size="10" font-weight="500">3.37 AC</text>
-        </g>
-
-        <!-- Middle row right: 7 -->
-        <g class="mp-lot" data-lot="7" tabindex="0" role="button" aria-label="Lot 7, 3.93 acres">
-          <rect x="380" y="260" width="120" height="100"/>
-          <text x="440" y="305" font-size="18">7</text>
-          <text x="440" y="323" font-size="10" font-weight="500">3.93 AC</text>
-        </g>
-
-        <!-- Bottom row: 6, 8, 9 -->
-        <g class="mp-lot" data-lot="6" tabindex="0" role="button" aria-label="Lot 6, 3.70 acres">
-          <rect x="200" y="380" width="120" height="80"/>
-          <text x="260" y="415" font-size="18">6</text>
-          <text x="260" y="433" font-size="10" font-weight="500">3.70 AC</text>
-        </g>
-        <g class="mp-lot" data-lot="8" tabindex="0" role="button" aria-label="Lot 8, 3.70 acres">
-          <rect x="195" y="260" width="100" height="100"/>
-          <text x="245" y="305" font-size="18">8</text>
-          <text x="245" y="323" font-size="10" font-weight="500">3.70 AC</text>
-        </g>
-        <g class="mp-lot" data-lot="9" tabindex="0" role="button" aria-label="Lot 9, 3.99 acres">
-          <rect x="320" y="380" width="160" height="80"/>
-          <text x="400" y="415" font-size="18">9</text>
-          <text x="400" y="433" font-size="10" font-weight="500">3.99 AC</text>
-        </g>
-
-        <!-- Cluster B detention -->
-        <g class="mp-detention">
-          <rect x="80" y="460" width="400" height="60"/>
-          <text x="280" y="486" font-size="11">SHARED DETENTION · 9.29 AC</text>
-          <text x="280" y="502" font-size="9">+ secondary detention area</text>
-        </g>
-
-        <!-- ============================================================ -->
-        <!-- MEDA PARCELS (south end) — under contract                     -->
-        <!-- 12.00 ac, 18.00 ac, 24.32 ac                                  -->
-        <!-- ============================================================ -->
-        <g class="mp-meda" tabindex="0" role="img" aria-label="MEDA parcel under contract, 12 acres" data-acres="12.00">
-          <rect x="80" y="540" width="200" height="160"/>
-          <text x="180" y="610" font-size="22" font-weight="700">12.00 AC</text>
-          <text x="180" y="630" class="mp-meda-label">UNDER CONTRACT — MEDA</text>
-        </g>
-        <g class="mp-meda" tabindex="0" role="img" aria-label="MEDA parcel under contract, 18 acres" data-acres="18.00">
-          <rect x="280" y="540" width="280" height="160"/>
-          <text x="420" y="610" font-size="22" font-weight="700">18.00 AC</text>
-          <text x="420" y="630" class="mp-meda-label">UNDER CONTRACT — MEDA</text>
-        </g>
-        <g class="mp-meda" tabindex="0" role="img" aria-label="MEDA parcel under contract, 24.32 acres" data-acres="24.32">
-          <rect x="560" y="540" width="420" height="160"/>
-          <text x="770" y="610" font-size="22" font-weight="700">24.32 AC</text>
-          <text x="770" y="630" class="mp-meda-label">UNDER CONTRACT — MISSION ECONOMIC DEVELOPMENT AUTHORITY</text>
-        </g>
-
-        <!-- 200' future loop road indicator -->
-        <line x1="80" y1="704" x2="980" y2="704" stroke="#666" stroke-width="1" stroke-dasharray="3 3"/>
-        <text x="80" y="700" font-size="9" fill="#5A5A5A" font-weight="500">200' R.O.W. RESERVED FOR FUTURE LOOP ROAD</text>
-
-      </svg>
+          <!-- MEDA parcels — under contract, no inquiry CTA -->
+          <polygon class="mp-meda-area" data-acres="24.32" tabindex="0" role="img" aria-label="MEDA parcel under contract, 24.32 acres" points="245,830 1080,895 1080,1010 245,1010"/>
+          <polygon class="mp-meda-area" data-acres="18.00" tabindex="0" role="img" aria-label="MEDA parcel under contract, 18.00 acres" points="265,1095 760,1095 720,1295 305,1295"/>
+          <polygon class="mp-meda-area" data-acres="12.00" tabindex="0" role="img" aria-label="MEDA parcel under contract, 12.00 acres" points="760,1095 1280,1095 1280,1300 760,1295"/>
+        </svg>
+      </div>
 
       <div id="mp-tooltip" class="mp-tooltip" role="tooltip"></div>
 
       <div class="mp-legend">
-        <div class="mp-legend__item"><span class="mp-legend__swatch mp-legend__swatch--avail"></span> Available — 16 lots / ±72.86 ac</div>
-        <div class="mp-legend__item"><span class="mp-legend__swatch mp-legend__swatch--meda"></span> Under contract — MEDA — 54.32 ac</div>
-        <div class="mp-legend__item"><span class="mp-legend__swatch mp-legend__swatch--det"></span> Shared detention areas</div>
+        <div class="mp-legend__item"><span class="mp-legend__swatch mp-legend__swatch--avail"></span> Available — 16 lots / ±72.86 ac · hover or click any lot</div>
+        <div class="mp-legend__item"><span class="mp-legend__swatch mp-legend__swatch--meda"></span> Under contract — MEDA — 54.32 ac across 3 parcels</div>
       </div>
       <p style="margin-top: 16px; font-size: 12px; color: var(--c-text-mute); font-style: italic;">
-        Diagrammatic site plan based on the M2 Engineering layout exhibit dated 04/29/2026. Not to scale. Refer to the recorded plat (West Addition to Sharyland, Vol. 1 Pg. 56 M.R.H.C.T.) and ALTA survey for boundary and easement locations.
+        Site plan exhibit prepared by M2 Engineering, PLLC (TBPELS Firm Reg. F-19545), dated 04/29/2026. Recorded as part of West Addition to Sharyland, Vol. 1 Pg. 56 M.R.H.C.T. Hover or click any lot for inventory detail.
       </p>
     </div>
   </div>
@@ -2555,6 +2567,118 @@ p { margin: 0 0 18px; }
 </section>
 
 </div><!-- /panel-lot16 -->
+
+<!-- =========================== TAB: GALLERY =========================== -->
+<div class="tab-panel" id="panel-gallery" role="tabpanel" aria-labelledby="tab-gallery" hidden>
+
+<!-- ================================================================
+     GALLERY — aerials, drone shots, site photos.
+     Drop images into the repo root (or /gallery/ folder) and update
+     the src paths below. Each .gallery-item supports an optional
+     <figcaption>. The gallery uses CSS grid for desktop and stacks
+     to a single column on mobile. Lazy loading on every image
+     keeps initial paint fast.
+     ================================================================ -->
+<section class="section" id="gallery">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <p class="eyebrow">04 — Gallery</p>
+        <h2>The site, from the ground and the air.</h2>
+      </div>
+      <p class="section-head__intro">
+        Aerial drone imagery, site photography, and contextual views of Mission Trade Center
+        and the surrounding industrial corridor. <span style="color: var(--c-orange);">[CONFIRM: replace placeholder images with finalized aerial drone shots once captured. Drop files into the repo root and update <code>src</code> paths in this section.]</span>
+      </p>
+    </div>
+
+    <!-- Hero aerial — full-width feature shot.
+         Replace src with the strongest single drone aerial: ideally a
+         SE-looking shot across the park toward S. Conway Avenue with
+         the I-2 corridor visible in the background. -->
+    <figure class="gallery-hero">
+      <div class="gallery-hero__media gallery-placeholder" data-gallery-placeholder>
+        <img src="aerial-hero.jpg" alt="Aerial view of Mission Trade Center looking southeast across the park toward S. Conway Avenue and the I-2 corridor" loading="lazy" decoding="async">
+        <span class="gallery-placeholder__label">[ AERIAL HERO — replace with <code>aerial-hero.jpg</code> ]</span>
+      </div>
+      <figcaption>
+        Aerial — Mission Trade Center looking southeast. S. Conway Avenue runs along the east edge; I-2 / US-83 corridor visible to the north. <span class="gallery-cap-meta">[CONFIRM caption with drone capture date]</span>
+      </figcaption>
+    </figure>
+
+    <!-- Aerial grid -->
+    <div class="gallery-grid">
+      <figure class="gallery-item">
+        <div class="gallery-item__media gallery-placeholder">
+          <img src="aerial-conway-frontage.jpg" alt="Aerial detail showing S. Conway Avenue frontage along Cluster A" loading="lazy" decoding="async">
+          <span class="gallery-placeholder__label">aerial-conway-frontage.jpg</span>
+        </div>
+        <figcaption>S. Conway Avenue frontage — Cluster A &amp; Lot 16 cold storage parcel</figcaption>
+      </figure>
+
+      <figure class="gallery-item">
+        <div class="gallery-item__media gallery-placeholder">
+          <img src="aerial-cluster-a.jpg" alt="Aerial of Cluster A — the 39.33-acre contiguous Northeast Industrial Block" loading="lazy" decoding="async">
+          <span class="gallery-placeholder__label">aerial-cluster-a.jpg</span>
+        </div>
+        <figcaption>Cluster A — 39.33 contiguous acres, Lots 10–16</figcaption>
+      </figure>
+
+      <figure class="gallery-item">
+        <div class="gallery-item__media gallery-placeholder">
+          <img src="aerial-cluster-b.jpg" alt="Aerial of Cluster B — the central cul-de-sac with Lots 1-9" loading="lazy" decoding="async">
+          <span class="gallery-placeholder__label">aerial-cluster-b.jpg</span>
+        </div>
+        <figcaption>Cluster B — central cul-de-sac, owner-user inventory</figcaption>
+      </figure>
+
+      <figure class="gallery-item">
+        <div class="gallery-item__media gallery-placeholder">
+          <img src="aerial-meda-parcels.jpg" alt="Aerial of the southern 54.32 acres under contract to MEDA" loading="lazy" decoding="async">
+          <span class="gallery-placeholder__label">aerial-meda-parcels.jpg</span>
+        </div>
+        <figcaption>South-end consolidation — 54.32 acres under contract to MEDA</figcaption>
+      </figure>
+
+      <figure class="gallery-item">
+        <div class="gallery-item__media gallery-placeholder">
+          <img src="aerial-corridor.jpg" alt="Wider aerial showing Mission Trade Center within the cross-border industrial corridor" loading="lazy" decoding="async">
+          <span class="gallery-placeholder__label">aerial-corridor.jpg</span>
+        </div>
+        <figcaption>The corridor — Mission Trade Center in context with surrounding industrial uses</figcaption>
+      </figure>
+
+      <figure class="gallery-item">
+        <div class="gallery-item__media gallery-placeholder">
+          <img src="aerial-bridge-context.jpg" alt="Aerial showing Mission Trade Center's proximity to Anzalduas International Bridge" loading="lazy" decoding="async">
+          <span class="gallery-placeholder__label">aerial-bridge-context.jpg</span>
+        </div>
+        <figcaption>Bridge proximity — 10 minutes to Anzalduas, 28 minutes to Pharr</figcaption>
+      </figure>
+    </div>
+
+    <!-- Optional drone flyover video. Comment out if no video available. -->
+    <div class="gallery-video">
+      <div class="gallery-video__head">
+        <p class="eyebrow">Drone flyover</p>
+        <h3>Aerial walkthrough of the park</h3>
+      </div>
+      <div class="gallery-video__media gallery-placeholder">
+        <video controls preload="metadata" poster="drone-flyover-poster.jpg">
+          <source src="drone-flyover.mp4" type="video/mp4">
+          Your browser does not support embedded video.
+        </video>
+        <span class="gallery-placeholder__label">drone-flyover.mp4 + drone-flyover-poster.jpg</span>
+      </div>
+      <p class="gallery-video__caption">
+        Full aerial flyover of Mission Trade Center, captured <span style="color: var(--c-orange);">[CONFIRM date]</span>.
+        <span class="gallery-cap-meta">Approximately [CONFIRM duration] minutes.</span>
+      </p>
+    </div>
+  </div>
+</section>
+
+</div><!-- /panel-gallery -->
 
 <!-- =========================== TAB: PROPERTY & MARKET =========================== -->
 <div class="tab-panel" id="panel-property" role="tabpanel" aria-labelledby="tab-property" hidden>

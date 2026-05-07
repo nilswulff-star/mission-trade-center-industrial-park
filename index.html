@@ -603,6 +603,9 @@ p { margin: 0 0 18px; }
   height: auto;
   user-select: none;
   -webkit-user-drag: none;
+  /* Hint to the browser to prefer sharper line-art rendering when scaling. */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 .mp-overlay {
   position: absolute;
@@ -616,43 +619,49 @@ p { margin: 0 0 18px; }
   pointer-events: none;
 }
 
-/* Inventory lot hit-areas: invisible by default, orange tint on hover. */
+/* Inventory lot hit-areas: nearly invisible at rest (the artboard
+   already shows the lots in orange) — outline-only hint for hover
+   discoverability, then strong dark outline + tint on hover/focus. */
 .mp-lot-area {
-  fill: var(--c-orange);
+  fill: var(--c-ink);
   fill-opacity: 0;
-  stroke: transparent;
+  stroke: rgba(14, 17, 22, 0.18);
   stroke-width: 2;
   cursor: pointer;
   pointer-events: auto;
-  transition: fill-opacity var(--t-fast) var(--easing), stroke var(--t-fast) var(--easing);
+  transition: fill-opacity var(--t-fast) var(--easing), stroke var(--t-fast) var(--easing), stroke-width var(--t-fast) var(--easing);
 }
 .mp-lot-area:hover,
-.mp-lot-area:focus,
-.mp-lot-area.is-selected {
-  fill-opacity: 0.45;
+.mp-lot-area:focus {
+  fill: #fff;
+  fill-opacity: 0.28;
   stroke: var(--c-ink);
+  stroke-width: 4;
   outline: none;
 }
 .mp-lot-area.is-selected {
-  fill-opacity: 0.55;
+  fill: #fff;
+  fill-opacity: 0.4;
+  stroke: var(--c-ink);
+  stroke-width: 4;
 }
 
-/* MEDA parcel hit-areas: muted slate-blue tint on hover (signals they're
-   informational only, not buyable). */
+/* MEDA parcel hit-areas: similar treatment but slate-blue accent on hover */
 .mp-meda-area {
   fill: #6E8294;
   fill-opacity: 0;
-  stroke: transparent;
+  stroke: rgba(74, 92, 110, 0.25);
   stroke-width: 2;
-  stroke-dasharray: 6 4;
+  stroke-dasharray: 8 5;
   cursor: help;
   pointer-events: auto;
   transition: fill-opacity var(--t-fast) var(--easing), stroke var(--t-fast) var(--easing);
 }
 .mp-meda-area:hover,
 .mp-meda-area:focus {
-  fill-opacity: 0.35;
+  fill-opacity: 0.3;
   stroke: #4A5C6E;
+  stroke-width: 4;
   outline: none;
 }
 .mp-tooltip {
@@ -729,9 +738,9 @@ p { margin: 0 0 18px; }
   width: 22px; height: 14px;
   border: 1px solid var(--c-rule);
 }
-.mp-legend__swatch--avail { background: rgba(255, 107, 0, 0.45); border-color: var(--c-ink); }
-.mp-legend__swatch--meda { background: rgba(110, 130, 148, 0.35); border-style: dashed; border-color: #4A5C6E; }
-.mp-legend__swatch--det { background: #B8D4E3; border-color: #6E92A6; }
+.mp-legend__swatch--avail { background: #FF8C2A; border-color: var(--c-ink); }
+.mp-legend__swatch--meda { background: #ffffff; border-style: dashed; border-color: #4A5C6E; }
+.mp-legend__swatch--det { background: #2347A8; border-color: #1a3580; }
 
 /* ================================================================
    INVENTORY
@@ -871,6 +880,13 @@ p { margin: 0 0 18px; }
 @keyframes rowFlash {
   0%   { background: rgba(255,107,0,0.4); }
   100% { background: transparent; }
+}
+.inq-lots--flash {
+  animation: inqFlash 1.4s ease-out;
+}
+@keyframes inqFlash {
+  0%   { box-shadow: 0 0 0 3px var(--c-orange); }
+  100% { box-shadow: 0 0 0 0 transparent; }
 }
 @media (max-width: 900px) {
   .lot-row {
@@ -1301,6 +1317,137 @@ p { margin: 0 0 18px; }
 .bridge__detail strong { color: inherit; font-weight: 600; }
 .bridge--feature .bridge__detail { color: var(--c-text-light); }
 .bridge--feature .bridge__detail strong { color: #fff; }
+
+/* ============================================================
+   BRIDGE CORRIDOR MAP
+   Dark-stage SVG showing all RGV bridge crossings with tooltips.
+   ============================================================ */
+.bridge-map {
+  margin: 32px 0 40px;
+  padding: 32px;
+  background: var(--c-ink);
+  color: #fff;
+  border: 1px solid var(--c-ink);
+}
+@media (max-width: 720px) { .bridge-map { padding: 20px 16px; } }
+.bridge-map__head { margin-bottom: 20px; }
+.bridge-map__head h3 {
+  font-family: var(--f-display);
+  font-size: clamp(22px, 2.4vw, 30px);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: #fff;
+  margin: 0 0 8px;
+}
+.bridge-map__intro {
+  font-family: var(--f-sans);
+  font-size: 14px;
+  color: var(--c-text-light);
+  line-height: 1.5;
+  margin: 0;
+  max-width: 800px;
+}
+.bridge-map__svg-wrap {
+  position: relative;
+  width: 100%;
+  margin: 16px 0;
+}
+.bridge-map__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--c-ink);
+}
+.bm-bridge {
+  cursor: pointer;
+  transition: r var(--t-fast) var(--easing), fill-opacity var(--t-fast) var(--easing), stroke-width var(--t-fast) var(--easing);
+}
+.bm-bridge:hover, .bm-bridge:focus {
+  outline: none;
+  stroke-width: 3;
+}
+.bm-bridge:not(.bm-bridge--key):hover,
+.bm-bridge:not(.bm-bridge--key):focus {
+  r: 9;
+}
+.bm-bridge--key:hover, .bm-bridge--key:focus {
+  r: 13;
+}
+.bridge-map__tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: #fff;
+  color: var(--c-ink);
+  padding: 14px 16px;
+  border-left: 3px solid var(--c-orange);
+  font-family: var(--f-sans);
+  font-size: 13px;
+  line-height: 1.45;
+  max-width: 280px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  opacity: 0;
+  transform: translate(-50%, calc(-100% - 14px));
+  transition: opacity var(--t-fast) var(--easing);
+  z-index: 10;
+}
+.bridge-map__tooltip.is-visible { opacity: 1; }
+.bm-tt__name {
+  font-family: var(--f-display);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin: 0 0 4px;
+  color: var(--c-ink);
+}
+.bm-tt__type {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-orange);
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+.bm-tt__detail {
+  margin: 0;
+  color: var(--c-text-mute);
+  font-size: 12.5px;
+}
+.bridge-map__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.12);
+}
+.bm-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--f-sans);
+  font-size: 12px;
+  color: var(--c-text-light);
+}
+.bm-legend__dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid #fff;
+}
+.bm-legend__dot--key { background: var(--c-orange); width: 16px; height: 16px; }
+.bm-legend__dot--reg { background: #5A8AB0; }
+.bm-legend__dot--mtc {
+  background: var(--c-orange);
+  border-radius: 0;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  border: 0;
+}
+
+@media (max-width: 720px) {
+  .bridge-map__legend { gap: 12px; }
+  .bm-legend__item { font-size: 11px; }
+}
 
 .connectivity {
   display: grid;
@@ -2325,39 +2472,38 @@ p { margin: 0 0 18px; }
     </div>
 
     <div class="master-plan" id="master-plan-wrap">
-      <!-- Master plan: actual M2 Engineering layout exhibit (04/29/2026)   -->
-      <!-- as the background image, with an SVG overlay defining invisible  -->
-      <!-- polygon hit areas for each lot. ViewBox matches the image's      -->
-      <!-- native pixel dimensions (2200x1530) so polygon coordinates map   -->
-      <!-- 1:1 to image pixels. preserveAspectRatio keeps both layers in    -->
-      <!-- lockstep at any container width.                                 -->
+      <!-- Master plan: branded master plan exhibit with all lots, MEDC    -->
+      <!-- consolidation, 365 Toll/Military Highway markers, and S Conway  -->
+      <!-- Avenue. SVG overlay defines invisible polygon hit areas on top  -->
+      <!-- of each lot. ViewBox matches image dimensions (3000x2136) so    -->
+      <!-- polygon coordinates map 1:1 to image pixels.                    -->
       <div class="mp-image-wrap">
         <img class="mp-image" src="master-plan.png"
-             alt="Mission Trade Center master plan exhibit prepared by M2 Engineering, PLLC, dated April 29, 2026, showing 16 inventory lots in two clusters and 54.32 acres of MEDA-contracted parcels along the southern boundary"
-             width="2200" height="1530">
-        <svg class="mp-overlay" viewBox="0 0 2200 1530" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Interactive lot overlay">
-          <!-- Inventory lots — invisible by default; orange tint on hover   -->
-          <polygon class="mp-lot-area" data-lot="1" tabindex="0" role="button" aria-label="Lot 1, 3.57 acres" points="1330,910 1500,910 1500,990 1330,990"/>
-          <polygon class="mp-lot-area" data-lot="2" tabindex="0" role="button" aria-label="Lot 2, 3.12 acres" points="870,895 1100,875 1100,950 880,975"/>
-          <polygon class="mp-lot-area" data-lot="3" tabindex="0" role="button" aria-label="Lot 3, 4.64 acres" points="990,790 1235,790 1235,870 870,870"/>
-          <polygon class="mp-lot-area" data-lot="4" tabindex="0" role="button" aria-label="Lot 4, 3.51 acres" points="1075,725 1255,725 1255,790 1015,790"/>
-          <polygon class="mp-lot-area" data-lot="5" tabindex="0" role="button" aria-label="Lot 5, 3.37 acres" points="940,650 1430,610 1430,650 975,720"/>
-          <polygon class="mp-lot-area" data-lot="6" tabindex="0" role="button" aria-label="Lot 6, 3.70 acres" points="1100,560 1330,490 1430,565 1430,605 1100,605"/>
-          <polygon class="mp-lot-area" data-lot="7" tabindex="0" role="button" aria-label="Lot 7, 3.93 acres" points="1340,810 1500,810 1500,895 1340,895"/>
-          <polygon class="mp-lot-area" data-lot="8" tabindex="0" role="button" aria-label="Lot 8, 3.70 acres" points="1235,810 1340,810 1340,895 1235,895"/>
-          <polygon class="mp-lot-area" data-lot="9" tabindex="0" role="button" aria-label="Lot 9, 3.99 acres" points="1275,725 1500,725 1500,805 1275,805"/>
-          <polygon class="mp-lot-area" data-lot="10" tabindex="0" role="button" aria-label="Lot 10, 5.29 acres" points="1565,318 1788,318 1788,405 1565,405"/>
-          <polygon class="mp-lot-area" data-lot="11" tabindex="0" role="button" aria-label="Lot 11, 5.14 acres" points="1565,213 1788,213 1788,318 1565,318"/>
-          <polygon class="mp-lot-area" data-lot="12" tabindex="0" role="button" aria-label="Lot 12, 5.12 acres" points="1565,108 1788,108 1788,213 1565,213"/>
-          <polygon class="mp-lot-area" data-lot="13" tabindex="0" role="button" aria-label="Lot 13, 5.12 acres" points="1788,108 2028,108 2028,213 1788,213"/>
-          <polygon class="mp-lot-area" data-lot="14" tabindex="0" role="button" aria-label="Lot 14, 5.14 acres" points="1788,213 2028,213 2028,318 1788,318"/>
-          <polygon class="mp-lot-area" data-lot="15" tabindex="0" role="button" aria-label="Lot 15, 5.13 acres" points="1788,318 2028,318 2028,405 1788,405"/>
-          <polygon class="mp-lot-area" data-lot="16" tabindex="0" role="button" aria-label="Lot 16, 8.39 acres - cold storage anchor" points="2028,108 2128,108 2128,355 2028,355"/>
+             alt="Mission Trade Center master plan showing 16 inventory lots in two clusters, plus 54.32 acres consolidated to MEDC at the southern edge, with frontage on S. Conway Avenue (east), Military Highway (south), and the future SH 365 Toll corridor"
+             width="3000" height="2136">
+        <svg class="mp-overlay" viewBox="0 0 3000 2136" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Interactive lot overlay">
+          <!-- Inventory lots — visible orange tint at rest; brightens on hover -->
+          <polygon class="mp-lot-area" data-lot="1"  tabindex="0" role="button" aria-label="Lot 1, 3.57 acres"  points="1540,1180 1660,1180 1660,1410 1540,1410"/>
+          <polygon class="mp-lot-area" data-lot="2"  tabindex="0" role="button" aria-label="Lot 2, 3.12 acres"  points="840,1180 1180,1180 1180,1380 870,1380"/>
+          <polygon class="mp-lot-area" data-lot="3"  tabindex="0" role="button" aria-label="Lot 3, 4.64 acres"  points="770,990 1180,990 1300,1170 800,1170"/>
+          <polygon class="mp-lot-area" data-lot="4"  tabindex="0" role="button" aria-label="Lot 4, 3.51 acres"  points="1090,830 1430,830 1380,960 1080,960"/>
+          <polygon class="mp-lot-area" data-lot="5"  tabindex="0" role="button" aria-label="Lot 5, 3.37 acres"  points="1170,690 1750,650 1750,790 1140,830"/>
+          <polygon class="mp-lot-area" data-lot="6"  tabindex="0" role="button" aria-label="Lot 6, 3.70 acres"  points="1190,580 1820,540 1820,670 1190,670"/>
+          <polygon class="mp-lot-area" data-lot="7"  tabindex="0" role="button" aria-label="Lot 7, 3.93 acres"  points="1510,1010 1820,1010 1820,1170 1510,1170"/>
+          <polygon class="mp-lot-area" data-lot="8"  tabindex="0" role="button" aria-label="Lot 8, 3.70 acres"  points="1190,1010 1500,1010 1500,1170 1190,1170"/>
+          <polygon class="mp-lot-area" data-lot="9"  tabindex="0" role="button" aria-label="Lot 9, 3.99 acres"  points="1540,810 1820,810 1820,990 1540,990"/>
+          <polygon class="mp-lot-area" data-lot="10" tabindex="0" role="button" aria-label="Lot 10, 5.29 acres" points="1755,380 2185,380 2185,520 1755,520"/>
+          <polygon class="mp-lot-area" data-lot="11" tabindex="0" role="button" aria-label="Lot 11, 5.14 acres" points="1755,200 2185,200 2185,360 1755,360"/>
+          <polygon class="mp-lot-area" data-lot="12" tabindex="0" role="button" aria-label="Lot 12, 5.12 acres" points="1755,20 2185,20 2185,190 1755,190"/>
+          <polygon class="mp-lot-area" data-lot="13" tabindex="0" role="button" aria-label="Lot 13, 5.12 acres" points="2215,20 2620,20 2620,190 2215,190"/>
+          <polygon class="mp-lot-area" data-lot="14" tabindex="0" role="button" aria-label="Lot 14, 5.14 acres" points="2215,200 2620,200 2620,360 2215,360"/>
+          <polygon class="mp-lot-area" data-lot="15" tabindex="0" role="button" aria-label="Lot 15, 5.13 acres" points="2215,380 2620,380 2620,520 2215,520"/>
+          <polygon class="mp-lot-area" data-lot="16" tabindex="0" role="button" aria-label="Lot 16, 8.39 acres - cold storage anchor" points="2640,20 2870,20 2870,520 2640,520"/>
 
           <!-- MEDA parcels — under contract, no inquiry CTA -->
-          <polygon class="mp-meda-area" data-acres="24.32" tabindex="0" role="img" aria-label="MEDA parcel under contract, 24.32 acres" points="245,830 1080,895 1080,1010 245,1010"/>
-          <polygon class="mp-meda-area" data-acres="18.00" tabindex="0" role="img" aria-label="MEDA parcel under contract, 18.00 acres" points="265,1095 760,1095 720,1295 305,1295"/>
-          <polygon class="mp-meda-area" data-acres="12.00" tabindex="0" role="img" aria-label="MEDA parcel under contract, 12.00 acres" points="760,1095 1280,1095 1280,1300 760,1295"/>
+          <polygon class="mp-meda-area" data-acres="24.32" tabindex="0" role="img" aria-label="MEDC parcel under contract, 24.32 acres" points="280,1180 1290,1180 1290,1430 180,1430 180,1380"/>
+          <polygon class="mp-meda-area" data-acres="18.00" tabindex="0" role="img" aria-label="MEDC parcel under contract, 18.00 acres" points="200,1620 720,1620 800,1850 280,1880"/>
+          <polygon class="mp-meda-area" data-acres="12.00" tabindex="0" role="img" aria-label="MEDC parcel under contract, 12.00 acres" points="730,1620 1500,1620 1500,1880 800,1850"/>
         </svg>
       </div>
 
@@ -2365,10 +2511,11 @@ p { margin: 0 0 18px; }
 
       <div class="mp-legend">
         <div class="mp-legend__item"><span class="mp-legend__swatch mp-legend__swatch--avail"></span> Available — 16 lots / ±72.86 ac · hover or click any lot</div>
-        <div class="mp-legend__item"><span class="mp-legend__swatch mp-legend__swatch--meda"></span> Under contract — MEDA — 54.32 ac across 3 parcels</div>
+        <div class="mp-legend__item"><span class="mp-legend__swatch mp-legend__swatch--meda"></span> Consolidated to MEDC — 54.32 ac across 3 parcels</div>
+        <div class="mp-legend__item"><span class="mp-legend__swatch mp-legend__swatch--det"></span> Shared detention areas — 9.29 ac &amp; 2.40 ac</div>
       </div>
       <p style="margin-top: 16px; font-size: 12px; color: var(--c-text-mute); font-style: italic;">
-        Site plan exhibit prepared by M2 Engineering, PLLC (TBPELS Firm Reg. F-19545), dated 04/29/2026. Recorded as part of West Addition to Sharyland, Vol. 1 Pg. 56 M.R.H.C.T. Hover or click any lot for inventory detail.
+        Master plan based on the M2 Engineering layout exhibit dated 04/29/2026 (TBPELS Firm Reg. F-19545). Recorded as part of West Addition to Sharyland, Vol. 1 Pg. 56 M.R.H.C.T. Hover or click any lot for inventory detail.
       </p>
     </div>
   </div>
@@ -2828,6 +2975,81 @@ p { margin: 0 0 18px; }
           Operates with modern logistics infrastructure: Unified Cargo Processing, a Competitive Logistics Network, a Fast Lane for Empty Trucks, faster connectivity to the Port of Brownsville, and BridgeConnect Trade Sessions for shipper-broker coordination.
         </p>
       </article>
+    </div>
+
+    <!-- Interactive bridge corridor map -->
+    <div class="bridge-map" id="bridge-map">
+      <div class="bridge-map__head">
+        <h3>The full Texas–Mexico bridge corridor</h3>
+        <p class="bridge-map__intro">12 international crossings between Roma and Brownsville. Mission Trade Center sits in the middle of the cluster, within direct reach of the two highest-volume commercial ports. Hover any bridge for detail. <span style="color: var(--c-text-mute); font-size: 12px;">Source: TxDOT Border Crossings dataset.</span></p>
+      </div>
+      <div class="bridge-map__svg-wrap">
+        <svg class="bridge-map__svg" viewBox="0 0 1300 480" role="img" aria-label="Map of Texas-Mexico international border crossings showing Mission Trade Center's position relative to 12 bridges">
+          <!-- Background -->
+          <rect x="0" y="0" width="1300" height="480" fill="#0E1116"/>
+
+          <!-- Stylized Rio Grande - approximate path between US and MX -->
+          <path d="M 0 100 Q 100 130 200 140 T 400 220 T 600 320 Q 700 340 800 320 T 1000 360 T 1300 460" fill="none" stroke="#3D6E94" stroke-width="3" stroke-opacity="0.6"/>
+          <text x="200" y="160" fill="#5A8AB0" font-family="Inter, sans-serif" font-size="11" font-style="italic" letter-spacing="0.05em">RIO GRANDE</text>
+
+          <!-- US side label (top) -->
+          <text x="20" y="30" fill="#fff" font-family="Inter, sans-serif" font-size="14" font-weight="600" letter-spacing="0.15em">UNITED STATES — TEXAS</text>
+          <!-- MX side label (bottom) -->
+          <text x="20" y="465" fill="#fff" font-family="Inter, sans-serif" font-size="14" font-weight="600" letter-spacing="0.15em">MEXICO — TAMAULIPAS</text>
+
+          <!-- Cities (US side, above the river) -->
+          <g class="bm-city">
+            <circle cx="59.4" cy="96" r="3" fill="#888"/><text x="69" y="100" fill="#bbb" font-family="Inter,sans-serif" font-size="11">Roma</text>
+            <circle cx="208" cy="108" r="3" fill="#888"/><text x="218" y="112" fill="#bbb" font-family="Inter,sans-serif" font-size="11">Rio Grande City</text>
+            <circle cx="572" cy="211" r="3" fill="#888"/><text x="445" y="208" fill="#bbb" font-family="Inter,sans-serif" font-size="11">Mission</text>
+            <circle cx="646" cy="224" r="3" fill="#888"/><text x="656" y="227" fill="#bbb" font-family="Inter,sans-serif" font-size="11">McAllen</text>
+            <circle cx="780" cy="237" r="3" fill="#888"/><text x="790" y="240" fill="#bbb" font-family="Inter,sans-serif" font-size="11">Donna</text>
+            <circle cx="825" cy="250" r="3" fill="#888"/><text x="835" y="253" fill="#bbb" font-family="Inter,sans-serif" font-size="11">Weslaco</text>
+            <circle cx="1047" cy="230" r="3" fill="#888"/><text x="1057" y="234" fill="#bbb" font-family="Inter,sans-serif" font-size="11">Harlingen</text>
+            <circle cx="1189" cy="416" r="3" fill="#888"/><text x="1090" y="412" fill="#bbb" font-family="Inter,sans-serif" font-size="11">Brownsville</text>
+          </g>
+
+          <!-- MX side cities -->
+          <g class="bm-city">
+            <circle cx="617" cy="320" r="3" fill="#888"/><text x="510" y="324" fill="#bbb" font-family="Inter,sans-serif" font-size="11">Reynosa, MX</text>
+            <circle cx="1181" cy="435" r="3" fill="#888"/><text x="1075" y="455" fill="#bbb" font-family="Inter,sans-serif" font-size="11">Matamoros, MX</text>
+          </g>
+
+          <!-- Mission Trade Center marker (star) -->
+          <g class="bm-mtc">
+            <line x1="572" y1="244" x2="577.2" y2="244" stroke="#FF6B00" stroke-width="2" stroke-dasharray="3 3"/>
+            <polygon points="577.2,228 581,239 593,239 583,247 587,260 577.2,253 567,260 571,247 561,239 573,239" fill="#FF6B00" stroke="#fff" stroke-width="1.5"/>
+            <text x="577.2" y="220" fill="#FF6B00" font-family="Inter,sans-serif" font-size="11" font-weight="700" text-anchor="middle" letter-spacing="0.05em">MISSION TRADE CENTER</text>
+          </g>
+
+          <!-- Bridge markers -->
+          <g class="bm-bridges">
+            <!-- Non-highlighted bridges (small dots) -->
+            <circle class="bm-bridge" data-name="Roma-Ciudad Miguel Alemán Bridge" data-type="Toll Bridge" data-detail="" cx="60" cy="94" r="6" fill="#5A8AB0" stroke="#fff" stroke-width="1.5" tabindex="0" role="button" aria-label="Roma-Ciudad Miguel Alemán International Bridge"/>
+            <circle class="bm-bridge" data-name="Starr-Camargo Bridge" data-type="Toll Bridge" data-detail="" cx="221" cy="118" r="6" fill="#5A8AB0" stroke="#fff" stroke-width="1.5" tabindex="0" role="button" aria-label="Starr-Camargo Bridge"/>
+            <circle class="bm-bridge" data-name="Los Ebanos Ferry" data-type="Hand-pulled ferry — only one of its kind on the US-MX border" data-detail="Passenger only — not commercial" cx="397" cy="199" r="6" fill="#888" stroke="#fff" stroke-width="1.5" tabindex="0" role="button" aria-label="Los Ebanos Ferry"/>
+
+            <!-- Highlighted bridges (larger, orange) — Anzalduas, McAllen-Hidalgo, Pharr -->
+            <circle class="bm-bridge bm-bridge--key" data-name="Anzalduas International Bridge" data-type="Toll Bridge — commercial &amp; passenger" data-detail="10 minutes from Mission Trade Center · Closest commercial port — $88M expansion to 6 commercial lanes" cx="581" cy="277" r="10" fill="#FF6B00" stroke="#fff" stroke-width="2" tabindex="0" role="button" aria-label="Anzalduas International Bridge — 10 minutes from Mission Trade Center"/>
+            <circle class="bm-bridge" data-name="McAllen-Hidalgo International Bridge" data-type="Toll Bridge — commercial &amp; passenger" data-detail="20 minutes from Mission Trade Center" cx="616" cy="290" r="8" fill="#FF6B00" fill-opacity="0.55" stroke="#fff" stroke-width="1.5" tabindex="0" role="button" aria-label="McAllen-Hidalgo International Bridge"/>
+            <circle class="bm-bridge bm-bridge--key" data-name="Pharr-Reynosa International Bridge" data-type="Toll Bridge — commercial &amp; passenger" data-detail="28 minutes from Mission Trade Center · #1 US port for produce — $13B+ trade flow" cx="665" cy="309" r="10" fill="#FF6B00" stroke="#fff" stroke-width="2" tabindex="0" role="button" aria-label="Pharr-Reynosa International Bridge — 28 minutes from Mission Trade Center"/>
+
+            <!-- Other RGV bridges -->
+            <circle class="bm-bridge" data-name="Donna-Rio Bravo International Bridge" data-type="Toll Bridge" data-detail="" cx="755" cy="309" r="6" fill="#5A8AB0" stroke="#fff" stroke-width="1.5" tabindex="0" role="button" aria-label="Donna-Rio Bravo International Bridge"/>
+            <circle class="bm-bridge" data-name="Progreso International Bridge" data-type="Toll Bridge" data-detail="" cx="854" cy="314" r="6" fill="#5A8AB0" stroke="#fff" stroke-width="1.5" tabindex="0" role="button" aria-label="Progreso International Bridge"/>
+            <circle class="bm-bridge" data-name="Free Trade International Bridge" data-type="Toll Bridge — commercial focus" data-detail="" cx="1011" cy="333" r="6" fill="#5A8AB0" stroke="#fff" stroke-width="1.5" tabindex="0" role="button" aria-label="Free Trade International Bridge"/>
+            <circle class="bm-bridge" data-name="Brownsville-Matamoros Express Bridge" data-type="Toll Bridge" data-detail="" cx="1186" cy="422" r="6" fill="#5A8AB0" stroke="#fff" stroke-width="1.5" tabindex="0" role="button" aria-label="Brownsville-Matamoros Express Bridge"/>
+            <circle class="bm-bridge" data-name="Gateway International Bridge" data-type="Toll Bridge" data-detail="" cx="1191" cy="417" r="6" fill="#5A8AB0" stroke="#fff" stroke-width="1.5" tabindex="0" role="button" aria-label="Gateway International Bridge"/>
+            <circle class="bm-bridge" data-name="Veterans International Bridge at Los Tomates" data-type="Toll Bridge" data-detail="" cx="1206" cy="426" r="6" fill="#5A8AB0" stroke="#fff" stroke-width="1.5" tabindex="0" role="button" aria-label="Veterans International Bridge at Los Tomates"/>
+          </g>
+        </svg>
+        <div class="bridge-map__tooltip" id="bm-tooltip" role="tooltip" aria-hidden="true"></div>
+      </div>
+      <div class="bridge-map__legend">
+        <div class="bm-legend__item"><span class="bm-legend__dot bm-legend__dot--key"></span> Key commercial corridor (Anzalduas, McAllen-Hidalgo, Pharr-Reynosa)</div>
+        <div class="bm-legend__item"><span class="bm-legend__dot bm-legend__dot--reg"></span> Other RGV crossings</div>
+        <div class="bm-legend__item"><span class="bm-legend__dot bm-legend__dot--mtc"></span> Mission Trade Center</div>
+      </div>
     </div>
 
     <h3 style="margin-bottom: 8px;">Other connectivity</h3>

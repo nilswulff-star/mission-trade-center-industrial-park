@@ -2356,6 +2356,151 @@ p { margin: 0 0 18px; }
   .tabs { display: none !important; }
   .tab-panel[hidden] { display: block !important; }
   .tab-panel { display: block !important; }
+  .lightbox { display: none !important; }
+}
+
+/* ============================================================
+   LIGHTBOX — click-to-zoom for any [data-lightbox] image.
+   Full-viewport dark overlay, native-resolution image, keyboard
+   and click-to-close. Pan-and-zoom on mobile via browser pinch.
+   ============================================================ */
+img[data-lightbox] {
+  cursor: zoom-in;
+  transition: opacity var(--t-fast) var(--easing);
+}
+img[data-lightbox]:hover {
+  opacity: 0.92;
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(14, 17, 22, 0.96);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 24px;
+  /* prevent body scroll under lightbox */
+  overscroll-behavior: contain;
+}
+.lightbox.is-open {
+  display: flex;
+}
+.lightbox__stage {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  /* pinch-zoom enabled on touch devices */
+  touch-action: pan-x pan-y pinch-zoom;
+  max-height: calc(100vh - 140px);
+}
+.lightbox__img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 140px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  cursor: zoom-out;
+  user-select: none;
+  -webkit-user-drag: none;
+  /* Crisp rendering for line-art maps */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  /* fade in */
+  animation: lbFadeIn 200ms var(--easing);
+}
+@keyframes lbFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.lightbox__close {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  font-family: var(--f-sans);
+  transition: background var(--t-fast) var(--easing), border-color var(--t-fast) var(--easing);
+  z-index: 2;
+}
+.lightbox__close:hover,
+.lightbox__close:focus {
+  background: rgba(255, 107, 0, 0.2);
+  border-color: var(--c-orange);
+  outline: none;
+}
+
+.lightbox__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 56px;
+  height: 56px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  font-family: var(--f-sans);
+  transition: background var(--t-fast) var(--easing), border-color var(--t-fast) var(--easing);
+  z-index: 2;
+}
+.lightbox__nav:hover,
+.lightbox__nav:focus {
+  background: rgba(255, 107, 0, 0.2);
+  border-color: var(--c-orange);
+  outline: none;
+}
+.lightbox__nav--prev { left: 24px; }
+.lightbox__nav--next { right: 24px; }
+.lightbox__nav:disabled,
+.lightbox__nav[disabled] {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.lightbox__caption {
+  color: rgba(255, 255, 255, 0.85);
+  font-family: var(--f-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+  margin: 16px 0 4px;
+  max-width: 800px;
+  padding: 0 16px;
+}
+.lightbox__counter {
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--f-sans);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .lightbox { padding: 12px; }
+  .lightbox__close { top: 12px; right: 12px; width: 40px; height: 40px; font-size: 24px; }
+  .lightbox__nav { width: 44px; height: 44px; font-size: 20px; }
+  .lightbox__nav--prev { left: 8px; }
+  .lightbox__nav--next { right: 8px; }
+  .lightbox__caption { font-size: 12px; }
+  .lightbox__counter { font-size: 11px; }
+  .lightbox__stage, .lightbox__img { max-height: calc(100vh - 120px); }
 }
 
 </style>
@@ -2561,7 +2706,7 @@ p { margin: 0 0 18px; }
      lot grid sits relative to Cluster B's cul-de-sac arrangement.
      ================================================================ -->
 <figure class="park-establishment">
-  <img src="park-overview-both-clusters.jpg" alt="Aerial drone view of Mission Trade Center showing Cluster A (Lots 10–16) along S. Conway Avenue with Cluster B (Lots 1–9) around the central cul-de-sac, with the I-2 corridor visible in the distance" loading="lazy">
+  <img data-lightbox src="park-overview-both-clusters.jpg" alt="Aerial drone view of Mission Trade Center showing Cluster A (Lots 10–16) along S. Conway Avenue with Cluster B (Lots 1–9) around the central cul-de-sac, with the I-2 corridor visible in the distance" loading="lazy">
 </figure>
 
 <!-- ================================================================
@@ -2585,9 +2730,9 @@ p { margin: 0 0 18px; }
       <!-- Avenue. Static image — interactive lot selection lives in the   -->
       <!-- Lot Inventory section below.                                     -->
       <div class="mp-image-wrap">
-        <img class="mp-image" src="master-plan.png"
+        <img data-lightbox class="mp-image" src="master-plan.png"
              alt="Mission Trade Center master plan showing 16 inventory lots in two clusters, plus 54.32 acres consolidated to MEDC at the southern edge, with frontage on S. Conway Avenue (east), Military Highway (south), and the future SH 365 Toll corridor"
-             width="3000" height="2136">
+             width="4000" height="2849">
       </div>
 
       <div class="mp-legend">
@@ -2604,7 +2749,7 @@ p { margin: 0 0 18px; }
     <!-- showing the park's real-world setting along S Conway Avenue and        -->
     <!-- Military Parkway, with the future SH 365 Toll corridor marker.         -->
     <figure class="site-aerial">
-      <img src="site-context-aerial.jpg" alt="Aerial satellite view of Mission Trade Center showing all 16 inventory lots in Cluster A and Cluster B, the MEDC-consolidated parcels at the southern edge, and the future SH 365 Toll corridor at the Military Parkway intersection" loading="lazy">
+      <img data-lightbox src="site-context-aerial.jpg" alt="Aerial satellite view of Mission Trade Center showing all 16 inventory lots in Cluster A and Cluster B, the MEDC-consolidated parcels at the southern edge, and the future SH 365 Toll corridor at the Military Parkway intersection" loading="lazy">
       <figcaption>Aerial site context — the park sits at the intersection of S. Conway Avenue (east frontage), Military Parkway / Military Highway (south frontage), and the future SH 365 Toll corridor (under construction at the southwest corner).</figcaption>
     </figure>
   </div>
@@ -2728,7 +2873,7 @@ p { margin: 0 0 18px; }
       </p>
     </div>
     <figure class="feature-aerial">
-      <img src="cluster-a-tagged-aerial.jpg" alt="Aerial drone view of Cluster A from the south side showing all seven lots tagged with acreage from Lot 10 (5.29 ac) through Lot 16 (8.39 ac), with S. Conway Avenue at the top edge and Interstate 2 visible on the horizon" loading="lazy">
+      <img data-lightbox src="cluster-a-tagged-aerial.jpg" alt="Aerial drone view of Cluster A from the south side showing all seven lots tagged with acreage from Lot 10 (5.29 ac) through Lot 16 (8.39 ac), with S. Conway Avenue at the top edge and Interstate 2 visible on the horizon" loading="lazy">
       <figcaption>Cluster A from the south — Lots 10 through 16 with acreage tags, S. Conway Avenue as the eastern edge, I-2 on the horizon. <strong>Total available: 39.33 acres / $12,388,950.</strong></figcaption>
     </figure>
   </div>
@@ -2751,7 +2896,7 @@ p { margin: 0 0 18px; }
       </p>
     </div>
     <figure class="feature-aerial">
-      <img src="sw-corner-365-toll.jpg" alt="Aerial drone view of the southwest corner of Mission Trade Center showing the future SH 365 Toll routing along Military Parkway, with the MEDC-consolidated parcels visible in the inset and active construction at the toll alignment" loading="lazy">
+      <img data-lightbox src="sw-corner-365-toll.jpg" alt="Aerial drone view of the southwest corner of Mission Trade Center showing the future SH 365 Toll routing along Military Parkway, with the MEDC-consolidated parcels visible in the inset and active construction at the toll alignment" loading="lazy">
       <figcaption>Looking east along Military Parkway from the park's SW corner. The 365 Toll alignment runs the park's full southern boundary; the MEDC-consolidated 54.32 acres sits between the toll and the inventory.</figcaption>
     </figure>
   </div>
@@ -2798,14 +2943,14 @@ p { margin: 0 0 18px; }
     <!-- Cluster A in true position and Conway Avenue framing the east     -->
     <!-- edge. Anchors the conceptual plan in real geography.              -->
     <figure class="lot16__site-aerial">
-      <img src="lot-16-conway-aerial.jpg" alt="Aerial drone view showing Lot 16 along S. Conway Avenue as the southernmost and largest lot in Cluster A, with the rest of Cluster A visible to the north and Cluster B visible in the inset" loading="lazy">
+      <img data-lightbox src="lot-16-conway-aerial.jpg" alt="Aerial drone view showing Lot 16 along S. Conway Avenue as the southernmost and largest lot in Cluster A, with the rest of Cluster A visible to the north and Cluster B visible in the inset" loading="lazy">
       <figcaption>Lot 16 on S. Conway Avenue — the southernmost and largest lot in Cluster A. Cluster B's cul-de-sac inventory shown for context.</figcaption>
     </figure>
 
     <div class="lot16__concept">
       <div>
         <div class="lot16__concept-img">
-          <img src="lot-16-cold-storage-concept.png" alt="Conceptual development plan for Lot 16 showing 14 small-bay cold storage suites in a 974' × 375' building with central truck court and dock areas on both sides." loading="lazy">
+          <img data-lightbox src="lot-16-cold-storage-concept.png" alt="Conceptual development plan for Lot 16 showing 14 small-bay cold storage suites in a 974' × 375' building with central truck court and dock areas on both sides." loading="lazy">
         </div>
         <p class="lot16__concept-caption">Conceptual development plan — Lot 16. Small Cold Storage Business Complex. 974' × 375' footprint with central truck court. Source: SVN | Hanna Solutions / seller-commissioned conceptual exhibit.</p>
       </div>
@@ -2886,7 +3031,7 @@ p { margin: 0 0 18px; }
          active steel yard adjacent, Rio Grande visible. -->
     <figure class="gallery-hero">
       <div class="gallery-hero__media">
-        <img src="park-full-outline-aerial.jpg" alt="Aerial drone view of Mission Trade Center showing the full park outline with all 16 inventory lots traced on the ground, the MEDC-consolidated 54.32 acres in the inset, the SH 365 Toll Coming Soon badge, S. Conway Avenue and Military Highway as primary frontages, and the active industrial neighbor along the eastern edge" loading="lazy" decoding="async">
+        <img data-lightbox src="park-full-outline-aerial.jpg" alt="Aerial drone view of Mission Trade Center showing the full park outline with all 16 inventory lots traced on the ground, the MEDC-consolidated 54.32 acres in the inset, the SH 365 Toll Coming Soon badge, S. Conway Avenue and Military Highway as primary frontages, and the active industrial neighbor along the eastern edge" loading="lazy" decoding="async">
       </div>
       <figcaption>
         Mission Trade Center — the full 127-acre park. S. Conway Avenue (east edge), Military Highway (south), and the future SH 365 Toll Coming Soon node visible at the southwest corner. The MEDC-consolidated 54.32 acres are shown in the inset.
@@ -2897,42 +3042,42 @@ p { margin: 0 0 18px; }
     <div class="gallery-grid">
       <figure class="gallery-item">
         <div class="gallery-item__media">
-          <img src="park-establishment-aerial.jpg" alt="Wide aerial drone view looking north over Mission Trade Center toward the I-2 corridor with the full park outline traced in white" loading="lazy" decoding="async">
+          <img data-lightbox src="park-establishment-aerial.jpg" alt="Wide aerial drone view looking north over Mission Trade Center toward the I-2 corridor with the full park outline traced in white" loading="lazy" decoding="async">
         </div>
         <figcaption>Looking north — the park outlined, I-2 corridor on the horizon</figcaption>
       </figure>
 
       <figure class="gallery-item">
         <div class="gallery-item__media">
-          <img src="park-overview-both-clusters.jpg" alt="Aerial showing Cluster A and Cluster B in true geographic relationship with the diagrammatic Cluster A inset above" loading="lazy" decoding="async">
+          <img data-lightbox src="park-overview-both-clusters.jpg" alt="Aerial showing Cluster A and Cluster B in true geographic relationship with the diagrammatic Cluster A inset above" loading="lazy" decoding="async">
         </div>
         <figcaption>Two clusters, one park — Cluster A above, Cluster B below</figcaption>
       </figure>
 
       <figure class="gallery-item">
         <div class="gallery-item__media">
-          <img src="cluster-a-northeast-aerial.jpg" alt="Aerial drone view of Cluster A from the northeast perspective with the full park diagram in inset and Interstate 2 highlighted on the horizon" loading="lazy" decoding="async">
+          <img data-lightbox src="cluster-a-northeast-aerial.jpg" alt="Aerial drone view of Cluster A from the northeast perspective with the full park diagram in inset and Interstate 2 highlighted on the horizon" loading="lazy" decoding="async">
         </div>
         <figcaption>Cluster A — from the northeast, I-2 in the distance</figcaption>
       </figure>
 
       <figure class="gallery-item">
         <div class="gallery-item__media">
-          <img src="cluster-a-tagged-aerial.jpg" alt="Aerial drone view of Cluster A from the south side showing all seven lots tagged with their individual acreages from Lot 10 through Lot 16" loading="lazy" decoding="async">
+          <img data-lightbox src="cluster-a-tagged-aerial.jpg" alt="Aerial drone view of Cluster A from the south side showing all seven lots tagged with their individual acreages from Lot 10 through Lot 16" loading="lazy" decoding="async">
         </div>
         <figcaption>Cluster A — every lot tagged · 39.33 contiguous acres</figcaption>
       </figure>
 
       <figure class="gallery-item">
         <div class="gallery-item__media">
-          <img src="lot-16-conway-aerial.jpg" alt="Aerial drone view of Cluster A with Lot 16 prominent on S. Conway Avenue frontage and Cluster B shown in inset" loading="lazy" decoding="async">
+          <img data-lightbox src="lot-16-conway-aerial.jpg" alt="Aerial drone view of Cluster A with Lot 16 prominent on S. Conway Avenue frontage and Cluster B shown in inset" loading="lazy" decoding="async">
         </div>
         <figcaption>Lot 16 on Conway — the cold storage anchor opportunity</figcaption>
       </figure>
 
       <figure class="gallery-item">
         <div class="gallery-item__media">
-          <img src="aerial-corridor-context.jpg" alt="Wide aerial drone view looking south over the Mission Trade Center area showing the active industrial corridor along S. Conway Avenue, the railroad alignment, an operating steel pipe yard adjacent to the park, and the Rio Grande visible in the distance" loading="lazy" decoding="async">
+          <img data-lightbox src="aerial-corridor-context.jpg" alt="Wide aerial drone view looking south over the Mission Trade Center area showing the active industrial corridor along S. Conway Avenue, the railroad alignment, an operating steel pipe yard adjacent to the park, and the Rio Grande visible in the distance" loading="lazy" decoding="async">
         </div>
         <figcaption>The corridor — active industrial neighbors, rail, river beyond</figcaption>
       </figure>
@@ -3096,7 +3241,7 @@ p { margin: 0 0 18px; }
     <!-- 3.1M FY24 vehicle volume and the 365 Toll Coming Soon callout.      -->
     <!-- The single image that ties park + bridge + toll together.           -->
     <figure class="infra-map">
-      <img src="cluster-a-anzalduas-pitch.jpg" alt="Aerial drone view of Cluster A from the south side, with all seven lots tagged by acreage, an Anzalduas International Bridge callout showing 3.1 million vehicles crossing in fiscal year 2024, and the future SH 365 Toll Coming Soon badge" loading="lazy">
+      <img data-lightbox src="cluster-a-anzalduas-pitch.jpg" alt="Aerial drone view of Cluster A from the south side, with all seven lots tagged by acreage, an Anzalduas International Bridge callout showing 3.1 million vehicles crossing in fiscal year 2024, and the future SH 365 Toll Coming Soon badge" loading="lazy">
       <figcaption><strong>3.1 million vehicles crossed Anzalduas in FY24.</strong> Cluster A from the south side, with the 365 Toll alignment running along Military Parkway behind the park. The toll's Coming Soon node — Anzalduas's commercial expansion completing in early 2025 — and Mission Trade Center's available 39-acre Cluster A all sit within frame.</figcaption>
     </figure>
 
@@ -3104,7 +3249,7 @@ p { margin: 0 0 18px; }
     <!-- planned SH 365 Toll, the IBTC ring, and all five RGV bridges in       -->
     <!-- their true geographic positions. Sets up the interactive map below.   -->
     <figure class="infra-map">
-      <img src="infrastructure-corridor.jpg" alt="Regional infrastructure map showing Mission Trade Center's position relative to the future SH 365 Toll corridor, the planned IBTC ring road, and the five Rio Grande Valley international bridges including Anzalduas, McAllen-Hidalgo, Pharr, Donna-Rio Bravo, and Progreso" loading="lazy">
+      <img data-lightbox src="infrastructure-corridor.jpg" alt="Regional infrastructure map showing Mission Trade Center's position relative to the future SH 365 Toll corridor, the planned IBTC ring road, and the five Rio Grande Valley international bridges including Anzalduas, McAllen-Hidalgo, Pharr, Donna-Rio Bravo, and Progreso" loading="lazy">
       <figcaption>Regional infrastructure context — the park sits where the planned SH 365 Toll meets the existing bridge network. Direct connections to Anzalduas (10 min), McAllen-Hidalgo, and Pharr-Reynosa (28 min), plus the IBTC corridor extending east to Donna-Rio Bravo and Progreso.</figcaption>
     </figure>
 
@@ -3776,6 +3921,28 @@ p { margin: 0 0 18px; }
     </div>
   </div>
 </footer>
+
+<!-- ================================================================
+     LIGHTBOX
+     Click-to-zoom for any [data-lightbox] image. Single overlay,
+     keyboard + click + swipe to close. Populated by JS at runtime.
+     ================================================================ -->
+<div class="lightbox" id="lightbox" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Image viewer">
+  <button type="button" class="lightbox__close" id="lightbox-close" aria-label="Close image viewer">
+    <span aria-hidden="true">&times;</span>
+  </button>
+  <button type="button" class="lightbox__nav lightbox__nav--prev" id="lightbox-prev" aria-label="Previous image">
+    <span aria-hidden="true">&larr;</span>
+  </button>
+  <div class="lightbox__stage" id="lightbox-stage">
+    <img class="lightbox__img" id="lightbox-img" src="" alt="">
+  </div>
+  <button type="button" class="lightbox__nav lightbox__nav--next" id="lightbox-next" aria-label="Next image">
+    <span aria-hidden="true">&rarr;</span>
+  </button>
+  <p class="lightbox__caption" id="lightbox-caption" aria-live="polite"></p>
+  <p class="lightbox__counter" id="lightbox-counter" aria-live="polite"></p>
+</div>
 
 <script src="mission-trade-center.js"></script>
 </body>
